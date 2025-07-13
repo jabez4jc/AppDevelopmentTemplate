@@ -462,6 +462,7 @@ Every application should include automated validation:
 3. **Testing**: Critical tests must pass
 4. **Coverage**: Test coverage validation
 5. **Documentation**: Documentation validation and updates
+6. **API Documentation**: Automatic OpenAPI/Swagger documentation generation and validation
 
 ### Running Validations Manually
 ```bash
@@ -470,6 +471,10 @@ python scripts/validate_test_coverage.py
 python scripts/validate_security.py
 python scripts/validate_documentation.py
 python scripts/validate_performance.py
+
+# Generate and validate API documentation
+python scripts/generate_api_docs.py --validate --api-url http://localhost:8000
+python docs/api/validate_docs.py --strict
 
 # Auto-fix issues where possible
 python scripts/fix_code_quality.py
@@ -499,6 +504,8 @@ python scripts/update_documentation.py
 - [ ] No security vulnerabilities introduced
 - [ ] Performance requirements met
 - [ ] Documentation updated (automatic via hooks)
+- [ ] API documentation generated and validated (for web apps)
+- [ ] Client integration examples tested
 
 ## 🚨 Common Pitfalls to Avoid
 

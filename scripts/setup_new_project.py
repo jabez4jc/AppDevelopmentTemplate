@@ -131,6 +131,9 @@ class ProjectSetup:
         
         # Update requirements for web framework
         self._create_requirements_file(target_path, framework, 'web')
+        
+        # Add API documentation generation
+        self._setup_api_documentation(target_path, framework)
     
     def _setup_cli_project(self, target_path: Path, name: str, framework: str = None, **kwargs) -> None:
         """Set up CLI application project."""
@@ -182,6 +185,9 @@ class ProjectSetup:
         
         # Update requirements for microservice framework
         self._create_requirements_file(target_path, framework, 'microservice')
+        
+        # Add API documentation generation
+        self._setup_api_documentation(target_path, framework)
     
     def _setup_data_project(self, target_path: Path, name: str, framework: str = None, **kwargs) -> None:
         """Set up data processing project."""
@@ -730,6 +736,177 @@ if __name__ == '__main__':
         ]
         
         (target_path / 'requirements-dev.txt').write_text('\n'.join(sorted(dev_requirements)))
+    
+    def _setup_api_documentation(self, target_path: Path, framework: str) -> None:
+        """Set up automatic API documentation system."""
+        
+        # Create API documentation directory
+        api_docs_dir = target_path / 'docs' / 'api'
+        api_docs_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Copy API documentation system files
+        api_doc_files = [
+            'API_DOCUMENTATION_SYSTEM.md',
+            'scripts/generate_api_docs.py'
+        ]
+        
+        for file_path in api_doc_files:
+            source = self.template_root / file_path
+            dest = target_path / file_path
+            
+            if source.exists():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, dest)
+        
+        # Add framework-specific documentation setup
+        if framework == 'fastapi':
+            self._setup_fastapi_docs(target_path)
+        elif framework == 'flask':
+            self._setup_flask_docs(target_path)
+        elif framework == 'django':
+            self._setup_django_docs(target_path)
+    
+    def _setup_fastapi_docs(self, target_path: Path) -> None:
+        """Set up FastAPI-specific documentation."""
+        
+        # FastAPI has built-in OpenAPI support
+        readme_addition = '''
+
+## API Documentation
+
+This FastAPI application includes automatic API documentation:
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc  
+- **OpenAPI Spec**: http://localhost:8000/openapi.json
+
+### Generate Documentation
+
+```bash
+# Generate comprehensive API documentation
+python scripts/generate_api_docs.py
+
+# Validate documentation
+python docs/api/validate_docs.py --api-url http://localhost:8000
+
+# Generate client SDKs
+# See docs/api/SDK_GENERATION.md for details
+```
+
+### Documentation Features
+
+- **Interactive Testing** - Test endpoints directly in browser
+- **Automatic Schema Generation** - Pydantic models create schemas
+- **Request/Response Examples** - Comprehensive examples for all endpoints
+- **Authentication Documentation** - Built-in auth flow documentation
+- **Client SDK Generation** - Generate clients in multiple languages
+'''
+        
+        readme_file = target_path / 'README.md'
+        if readme_file.exists():
+            content = readme_file.read_text()
+            readme_file.write_text(content + readme_addition)
+    
+    def _setup_flask_docs(self, target_path: Path) -> None:
+        """Set up Flask-specific documentation."""
+        
+        # Add Flask-RESTX requirements if not already present
+        requirements_file = target_path / 'requirements.txt'
+        if requirements_file.exists():
+            content = requirements_file.read_text()
+            if 'flask-restx' not in content.lower():
+                with open(requirements_file, 'a') as f:
+                    f.write('\nflask-restx>=1.1.0\n')
+        
+        readme_addition = '''
+
+## API Documentation
+
+This Flask application includes automatic API documentation using Flask-RESTX:
+
+- **Swagger UI**: http://localhost:5000/docs/
+- **OpenAPI Spec**: Available through Swagger UI
+
+### Generate Documentation
+
+```bash
+# Generate comprehensive API documentation
+python scripts/generate_api_docs.py
+
+# Validate documentation
+python docs/api/validate_docs.py --api-url http://localhost:5000
+
+# Generate client SDKs
+# See docs/api/SDK_GENERATION.md for details
+```
+
+### Documentation Features
+
+- **Interactive Testing** - Test endpoints directly in browser
+- **Automatic Schema Generation** - Flask-RESTX models create schemas
+- **Request/Response Examples** - Comprehensive examples for all endpoints
+- **Authentication Documentation** - Built-in auth flow documentation
+- **Client SDK Generation** - Generate clients in multiple languages
+'''
+        
+        readme_file = target_path / 'README.md'
+        if readme_file.exists():
+            content = readme_file.read_text()
+            readme_file.write_text(content + readme_addition)
+    
+    def _setup_django_docs(self, target_path: Path) -> None:
+        """Set up Django-specific documentation."""
+        
+        # Add DRF and drf-yasg requirements
+        requirements_file = target_path / 'requirements.txt'
+        if requirements_file.exists():
+            content = requirements_file.read_text()
+            additions = []
+            if 'djangorestframework' not in content.lower():
+                additions.append('djangorestframework>=3.14.0')
+            if 'drf-yasg' not in content.lower():
+                additions.append('drf-yasg>=1.21.0')
+            
+            if additions:
+                with open(requirements_file, 'a') as f:
+                    f.write('\n' + '\n'.join(additions) + '\n')
+        
+        readme_addition = '''
+
+## API Documentation
+
+This Django application includes automatic API documentation using DRF and drf-yasg:
+
+- **Swagger UI**: http://localhost:8000/swagger/
+- **ReDoc**: http://localhost:8000/redoc/
+- **OpenAPI Spec**: http://localhost:8000/swagger.json
+
+### Generate Documentation
+
+```bash
+# Generate comprehensive API documentation
+python scripts/generate_api_docs.py
+
+# Validate documentation
+python docs/api/validate_docs.py --api-url http://localhost:8000
+
+# Generate client SDKs
+# See docs/api/SDK_GENERATION.md for details
+```
+
+### Documentation Features
+
+- **Interactive Testing** - Test endpoints directly in browser
+- **Automatic Schema Generation** - DRF serializers create schemas
+- **Request/Response Examples** - Comprehensive examples for all endpoints
+- **Authentication Documentation** - Built-in auth flow documentation
+- **Client SDK Generation** - Generate clients in multiple languages
+'''
+        
+        readme_file = target_path / 'README.md'
+        if readme_file.exists():
+            content = readme_file.read_text()
+            readme_file.write_text(content + readme_addition)
     
     def _update_project_context(self, target_path: Path, name: str, project_type: str, 
                                framework: str, **kwargs) -> None:
